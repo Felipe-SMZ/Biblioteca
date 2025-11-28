@@ -13,7 +13,7 @@ const autoresRoutes = require('./routes/Autores.routes');
 const generosRoutes = require('./routes/Generos.routes');
 const livrosRoutes = require('./routes/Livros.routes');
 
-// 2. MIDDLEWARES ESSENCIAIS (INCLUINDO CORS)
+// 2. MIDDLEWARES ESSENCIAIS 
 app.use(cors()); // Configuração simples de CORS para desenvolvimento
 app.use(express.json()); // Middleware para parsear JSON
 
