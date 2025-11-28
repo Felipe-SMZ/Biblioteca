@@ -23,14 +23,35 @@ const criarLivro = async (req, res) => {
 
 const buscarTodosLivros = async (req, res) => {
     try {
-        const generos = await LivrosService.buscarTodosLivros();
+        // Verifica se o parâmetro 'titulo' está na query string (ex: /livros?titulo=A%20Ilíada)
+        const { titulo } = req.query;
+        let livros;
 
+        if (titulo) {
+            // Se o título for fornecido, chama a função de busca por título
+            livros = await LivrosService.buscarLivroPorTitulo(titulo);
+
+            // Se a busca por título retornar vazia, tratamos como 404 (Not Found)
+            if (livros.length === 0) {
+                return res.status(404).json({
+                    sucesso: false,
+                    mensagem: `Nenhum livro encontrado com o título que contenha '${titulo}'.`
+                });
+            }
+
+        } else {
+            // Caso contrário, busca todos os livros
+            livros = await LivrosService.buscarTodosLivros();
+        }
+
+        // Retorna sucesso (status 200 = OK)
         return res.status(200).json({
             sucesso: true,
-            quantidade: generos.length,
-            dados: generos
+            quantidade: livros.length,
+            dados: livros
         });
     } catch (error) {
+        // Retorna erro (Status 500 = Internal Server Error)
         return res.status(500).json({
             sucesso: false,
             mensagem: error.message
@@ -63,7 +84,7 @@ const atualizarLivro = async (req, res) => {
     try {
         const { id } = req.params;
         const dados = req.body
-        
+
         const livroAtualizado = await LivrosService.atualizarLivro(id, dados);
 
         return res.status(200).json({

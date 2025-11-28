@@ -34,6 +34,24 @@ const buscarLivroPorId = async (id) => {
     }
 };
 
+const buscarLivroPorTitulo = async (titulo) => {
+    try {
+        // Cria uma expressão regular (RegExp) para busca parcial (sem precisar do título exato)
+        // e case-insensitive ('i').
+        const regex = new RegExp(titulo, 'i');
+
+        // Busca onde o campo 'titulo' corresponde à regex
+        const livros = await Livros.find({ titulo: regex })
+            .populate('autor_id')
+            .populate('genero_id');
+
+        // Se não encontrar nenhum, retorna um array vazio
+        return livros;
+    } catch (error) {
+        throw new Error(`Erro ao buscar livro por título: ${error.message}`);
+    }
+};
+
 const atualizarLivro = async (id, dados) => {
     try {
         // { new: true } faz retornar o documento ATUALIZADO (não o antigo)
@@ -76,6 +94,7 @@ module.exports = {
     criarLivro,
     buscarTodosLivros,
     buscarLivroPorId,
+    buscarLivroPorTitulo,
     atualizarLivro,
     deletarLivro
 };

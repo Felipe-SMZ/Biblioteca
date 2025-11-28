@@ -1,83 +1,42 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import './index.css'; // ⬅️ Importa o CSS Simples
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// ⚠️ ATENÇÃO: Defina a URL base da sua API
-const API_URL = 'http://localhost:3000/api/livros';
+// Componentes
+import Header from './components/Header';
+
+// Páginas
+import Home from './pages/Home';
+import LivrosListagem from './pages/LivrosListagem';
+
+// Página Placeholder para Cadastro
+const CadastroPlaceholder = () => (
+  <div className="page-container" style={{ textAlign: 'center', marginTop: '50px' }}>
+    <h2 className="titulo-principal" style={{ color: '#ef4444' }}>⚠️ Em Desenvolvimento</h2>
+    <p style={{ fontSize: '1.2rem', color: '#4b5563' }}>Esta página de cadastro será implementada em breve.</p>
+  </div>
+);
+
 
 function App() {
-  const [livros, setLivros] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchLivros = async () => {
-    try {
-      const response = await axios.get(API_URL);
-      setLivros(response.data.dados);
-      setLoading(false);
-    } catch (err) {
-      setError('Erro ao buscar dados da API. Verifique se o backend está rodando e se a URL está correta.');
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLivros();
-  }, []);
-
-  // --- RENDERING (Visualização) ---
-
-  if (loading) {
-    return <div className="app-container text-center text-lg">Carregando livros...</div>;
-  }
-
-  if (error) {
-    return <div className="app-container text-center text-red-600 font-bold">{error}</div>;
-  }
-
   return (
-    <div className="app-container">
-      <h1 className="titulo-principal">📚 Catálogo de Livros</h1>
+    <Router>
+      <Header /> {/* O Header é exibido em todas as páginas */}
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/livros" element={<LivrosListagem />} />
 
-      <div className="livros-grid">
-        {livros.map(livro => (
-          <LivroCard key={livro._id} livro={livro} />
-        ))}
-      </div>
-    </div>
+          {/* Rotas Placeholder de Cadastro */}
+          <Route path="/cadastro/generos" element={<CadastroPlaceholder />} />
+          <Route path="/cadastro/autores" element={<CadastroPlaceholder />} />
+          <Route path="/cadastro/livros" element={<CadastroPlaceholder />} />
+
+          {/* Rota para páginas não encontradas (Opcional) */}
+          <Route path="*" element={<h1 style={{ textAlign: 'center', marginTop: '100px' }}>404 - Página Não Encontrada</h1>} />
+        </Routes>
+      </main>
+    </Router>
   );
 }
-
-
-// Componente Simples para a visualização de cada Livro
-const LivroCard = ({ livro }) => {
-  // Formata a data para algo legível
-  const dataPub = new Date(livro.data_publicacao).toLocaleDateString('pt-BR');
-
-  return (
-    <div className="livro-card">
-      <h2 className="livro-titulo">{livro.titulo}</h2>
-
-      <p className="livro-autor">
-        Autor: {livro.autor_id ? livro.autor_id.nome : 'Desconhecido'}
-      </p>
-
-      <div className="space-y-2 livro-info">
-        <p>
-          <strong>Gênero:</strong>
-          <span className="genero-tag">
-            {livro.genero_id ? livro.genero_id.genero : 'N/A'}
-          </span>
-        </p>
-        <p>
-          <strong>Publicação:</strong> {dataPub}
-        </p>
-        <p>
-          <strong>Criado em:</strong> {new Date(livro.createdAt).toLocaleDateString('pt-BR')}
-        </p>
-      </div>
-    </div>
-  );
-};
 
 export default App;

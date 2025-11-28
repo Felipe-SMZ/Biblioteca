@@ -92,3 +92,169 @@ body {
   font-weight: 600;
   margin-left: 8px;
 }
+
+/* --- ESTILOS DO HEADER --- */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: var(--cor-principal);
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.header-link-brand {
+  color: white;
+  text-decoration: none;
+}
+
+.header-nav-list {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+.header-nav-item {
+  position: relative;
+  margin-left: 1.5rem;
+}
+
+.header-link,
+.dropdown-toggle {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem;
+  display: block;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.header-link:hover,
+.dropdown-toggle:hover {
+  color: #e0e7ff;
+  /* Índigo mais claro */
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  min-width: 150px;
+  z-index: 10;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-item {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-link {
+  color: var(--cor-texto);
+  text-decoration: none;
+  padding: 0.75rem 1rem;
+  display: block;
+}
+
+.dropdown-link:hover {
+  background-color: #f3f4f6;
+}
+
+/* --- ESTILOS DA HOME --- */
+.home-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4rem 8rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 4rem;
+}
+
+.home-content {
+  flex: 1;
+}
+
+.home-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--cor-principal);
+  margin-bottom: 1rem;
+}
+
+.home-subtitle {
+  font-size: 1.5rem;
+  color: var(--cor-suave);
+  margin-bottom: 2.5rem;
+}
+
+.home-button {
+  background-color: var(--cor-secundaria);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.home-button:hover {
+  background-color: var(--cor-principal);
+}
+
+.home-button a {
+  color: white;
+  text-decoration: none;
+}
+
+.home-image-wrapper {
+  flex: 1;
+  max-width: 50%;
+}
+
+.home-image {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Ajustes para Listagem */
+.page-container {
+  padding: 2rem 4rem;
+}
+
+.loading-message,
+.error-message {
+  padding: 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.error-message {
+  color: #ef4444;
+  /* Vermelho forte */
+}
