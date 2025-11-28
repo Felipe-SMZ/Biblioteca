@@ -1,4 +1,22 @@
 const Livros = require('../models/Livros');
+require('../models/Autores');
+require('../models/Generos');
+
+const ajustarData = (dados) => {
+    // Apenas ajusta se a data_publicacao existir
+    if (dados.data_publicacao) {
+        // Cria um objeto Date a partir da string 'YYYY-MM-DD'
+        const dataOriginal = new Date(dados.data_publicacao);
+
+        // Define a hora para 12:00 (meio-dia) em UTC.
+        // Isso evita que a conversão de fuso horário no banco/frontend mova o dia.
+        dataOriginal.setUTCHours(12, 0, 0, 0);
+
+        // Atualiza a propriedade no objeto de dados
+        dados.data_publicacao = dataOriginal;
+    }
+    return dados;
+};
 
 const criarLivro = async (dados) => {
     try {
@@ -23,7 +41,11 @@ const buscarTodosLivros = async () => {
 
 const buscarLivroPorId = async (id) => {
     try {
-        const livro = await Livros.findById(id);
+        // CORREÇÃO: Adicionar .populate() para buscar o objeto completo
+        const livro = await Livros.findById(id)
+            .populate('autor_id')
+            .populate('genero_id');
+
         if (!livro) {
             throw new Error('Livro não encontrado');
         }
@@ -54,11 +76,12 @@ const buscarLivroPorTitulo = async (titulo) => {
 
 const atualizarLivro = async (id, dados) => {
     try {
+        const dadosAjustados = ajustarData(dados);
         // { new: true } faz retornar o documento ATUALIZADO (não o antigo)
         // { runValidators: true } valida os dados antes de salvar
         const livroAtualizado = await Livros.findByIdAndUpdate(
             id,
-            dados,
+            dadosAjustados,
             { new: true, runValidators: true }
         )
             .populate('autor_id')

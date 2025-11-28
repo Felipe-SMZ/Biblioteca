@@ -1,28 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-// URL base da API
-const API_URL = 'http://localhost:3000/api/livros';
+import { LivrosApi } from '../services/apiService';
+import { useNavigate } from 'react-router-dom';
 
 // ==========================================================
 // 1. Componente de Exibição do Livro (Card)
 // ==========================================================
-const LivroCard = ({ livro }) => {
+// Recebe o objeto livro e a função onDelete (do componente pai)
+const LivroCard = ({ livro, onDelete, onEdit }) => {
+
     // Tratamento de data nula e formatação
-    const dataPub = livro.data_publicacao 
-        ? new Date(livro.data_publicacao).toLocaleDateString('pt-BR') 
+    const dataPub = livro.data_publicacao
+        ? new Date(livro.data_publicacao).toLocaleDateString('pt-BR')
         : 'Data Desconhecida';
 
-    // Se o livro for nulo ou undefined, retorna null (segurança)
     if (!livro) return null;
 
     return (
         <div className="livro-card">
             <h2 className="livro-titulo">{livro.titulo}</h2>
-            {/* Exibe o ID (útil para testes de Busca por ID) */}
-            <p className="livro-id-display">ID: {livro._id}</p>
-            
+
             <p className="livro-autor">Autor: {livro.autor_id ? livro.autor_id.nome : 'Desconhecido'}</p>
+
             <div className="livro-info">
                 <p>
                     <strong>Gênero:</strong>
@@ -30,186 +28,198 @@ const LivroCard = ({ livro }) => {
                         {livro.genero_id ? livro.genero_id.genero : 'N/A'}
                     </span>
                 </p>
-                <p>
-                    <strong>Publicação:</strong> {dataPub}
-                </p>
+                <p className="livro-publicacao">Publicação: {dataPub}</p>
             </div>
-            {/* ⚠️ FUTURO: Botões de Editar e Excluir aqui */}
+
+            {/* BOTÕES DE AÇÃO */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: '10px',
+                marginTop: '15px',
+                paddingTop: '10px',
+                borderTop: '1px solid #eee'
+            }}>
+                {/* Botão Editar */}
+                <button
+                    onClick={() => onEdit(livro._id)}
+                    style={{
+                        background: '#ffc107',
+                        color: 'white',
+                        border: 'none',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem'
+                    }}
+                >
+                    Editar
+                </button>
+
+                {/* Botão Excluir: Chama a função onDelete passada pelo componente pai */}
+                <button
+                    onClick={() => onDelete(livro._id, livro.titulo)}
+                    style={{
+                        background: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem'
+                    }}
+                >
+                    Excluir
+                </button>
+            </div>
         </div>
     );
 };
 
 
 // ==========================================================
-// 2. Componente Principal de Listagem
+// 2. Componente de Listagem Principal
 // ==========================================================
 const LivrosListagem = () => {
-    // --- ESTADOS DA LISTAGEM GERAL E FILTRO POR TÍTULO ---
     const [livros, setLivros] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [filtroTitulo, setFiltroTitulo] = useState(''); // Termo de busca no filtro
+    const [filtroTitulo, setFiltroTitulo] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [erro, setErro] = useState(null);
+    const navigate = useNavigate();
 
-    // --- ESTADOS DA BUSCA RÁPIDA POR ID ---
-    const [buscaId, setBuscaId] = useState(''); // ID digitado
-    const [livroBuscado, setLivroBuscado] = useState(null); // Livro único encontrado
-    const [erroBuscaId, setErroBuscaId] = useState(null); // Erro específico da busca por ID
-
-
-    // 3. FUNÇÃO DE BUSCA DE LIVROS (SUPORTA FILTRO POR TÍTULO)
-    const fetchLivros = async (titulo = '') => { 
-        setLoading(true);
-        setError(null);
-        setLivros([]); // Limpa a lista antes de nova busca
-
-        let urlBusca = API_URL;
-
-        // Se o título não for vazio, adiciona o Query Parameter para filtragem
-        if (titulo.trim()) {
-            urlBusca = `${API_URL}?titulo=${encodeURIComponent(titulo.trim())}`; 
-            // Usamos encodeURIComponent para garantir que caracteres especiais funcionem na URL
-        }
+    // Função que chama a API para buscar livros
+    const fetchLivros = async (titulo) => {
+        setIsLoading(true);
+        setErro(null);
 
         try {
-            const response = await axios.get(urlBusca);
-            setLivros(response.data.dados);
-            setLoading(false);
+            const dados = await LivrosApi.buscarTodosLivros(titulo);
+            setLivros(dados);
         } catch (err) {
-            setError('Erro ao buscar dados da API. Verifique se o backend está rodando.');
-            setLoading(false);
+            console.error("Erro ao carregar livros:", err);
+            setErro(err.message || 'Falha ao conectar com o servidor.');
+            setLivros([]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    //Função para lidar com a edição (apenas navegação)
+    const handleEditarLivro = (id) => {
+        navigate(`/livros/editar/${id}`);
+    };
 
-    // 4. FUNÇÃO DE BUSCA POR ID (Busca um único livro)
-    const buscarPorId = async (e) => {
-        e.preventDefault(); // Evita que o formulário recarregue a página
-        setLivroBuscado(null);
-        setErroBuscaId(null);
-        
-        if (!buscaId.trim()) {
-            setErroBuscaId('Por favor, digite um ID para buscar.');
-            return;
-        }
+    // FUNÇÃO DE DELEÇÃO (Implementação do D do CRUD)
+    const handleDeletarLivro = async (id, tituloLivro) => {
+        if (!window.confirm(`Tem certeza que deseja deletar o livro "${tituloLivro}"? Esta ação é irreversível.`)) return;
+
+        // Define o estado para mostrar o loading ou feedback
+        setIsLoading(true);
+        setErro(null);
 
         try {
-            // Requisição com o ID como Parâmetro de Rota
-            const response = await axios.get(`${API_URL}/${buscaId.trim()}`);
-            setLivroBuscado(response.data.dados); 
-            
+            await LivrosApi.deletarLivro(id);
+
+            // Remove o livro deletado da lista localmente (melhor UX)
+            setLivros(livros.filter(l => l._id !== id));
+            // Opcional: Mostrar feedback de sucesso
+            alert(`Livro "${tituloLivro}" deletado com sucesso!`);
+
         } catch (error) {
-            // Tratamento de erro 404 (Não Encontrado)
-            if (error.response && error.response.status === 404) {
-                setErroBuscaId(`Livro não encontrado com o ID: ${buscaId}`);
-            } else {
-                setErroBuscaId('Erro na comunicação com a API ao buscar por ID.');
-            }
+            console.error("Erro ao deletar livro:", error);
+            setErro(`Erro ao deletar livro: ${error.message}`);
+        } finally {
+            // Se a lista estiver vazia após a deleção, o isLoading voltará a false
+            // Se houve erro, o erro será exibido
+            setIsLoading(false);
         }
     };
 
 
-    // 5. EFEITO INICIAL (Carrega todos os livros na montagem)
+    // Efeito para carregar livros na montagem do componente
     useEffect(() => {
-        // Chamada inicial sem filtro
-        fetchLivros(''); 
-    }, []); 
+        fetchLivros(''); // Carrega todos os livros inicialmente
+    }, []);
 
-    // 6. RENDERIZAÇÃO
-    
-    // Mensagens de estado
-    if (loading) {
-        return <div className="loading-message">Carregando livros...</div>;
-    }
+    // Função para buscar após o envio do formulário de filtro
+    const handleFiltroSubmit = (e) => {
+        e.preventDefault();
+        fetchLivros(filtroTitulo);
+    };
 
-    if (error) {
-        return <div className="error-message">{error}</div>;
-    }
 
     return (
-        <div className="page-container">
-            <h1 className="titulo-principal">📖 Catálogo de Livros</h1>
-            
-            {/* ========================================================== */}
-            {/* INTERFACE DE BUSCA RÁPIDA POR ID (Aula 3) */}
-            {/* ========================================================== */}
-            <div className="busca-id-section">
-                <h2 className="busca-id-title">🔍 Busca Rápida por ID</h2>
-                <form className="busca-form-id" onSubmit={buscarPorId}>
-                    <input
-                        type="text"
-                        className="busca-input"
-                        placeholder="Digite o ID do livro (ex: 692a03a3...)"
-                        value={buscaId}
-                        onChange={(e) => setBuscaId(e.target.value)}
-                    />
-                    <button type="submit" className="busca-button">
-                        Buscar ID
-                    </button>
-                    <button type="button" className="limpar-button" onClick={() => {
-                         setBuscaId('');
-                         setLivroBuscado(null);
-                         setErroBuscaId(null);
-                    }}>
-                        Limpar Busca
-                    </button>
-                </form>
+        <div className="livros-container" style={{ padding: '20px' }}>
+            <h1 className="titulo-principal">Catálogo de Livros</h1>
 
-                {erroBuscaId && <p className="error-message-id">{erroBuscaId}</p>}
-
-                {/* Exibição do Livro Único Encontrado */}
-                {livroBuscado && (
-                    <div className="resultado-busca-id">
-                        <h3 className="titulo-resultado">Resultado Encontrado:</h3>
-                        <div className="livros-grid-single">
-                            <LivroCard livro={livroBuscado} />
-                        </div>
-                    </div>
-                )}
-            </div>
-            
             {/* ========================================================== */}
-            {/* INTERFACE DE FILTRO POR TÍTULO (Aula 2) */}
+            {/* FORMULÁRIO DE BUSCA */}
             {/* ========================================================== */}
-            <div className="filtro-section">
-                <h2 className="busca-id-title">📝 Filtrar por Título</h2>
-                <form className="busca-form-titulo" onSubmit={(e) => {
-                    e.preventDefault(); 
-                    fetchLivros(filtroTitulo); // Dispara a busca com o termo
-                    setLivroBuscado(null); // Garante que a busca por ID seja limpa
-                }}>
+            <div className="filtro-container" style={{ marginBottom: '30px' }}>
+                <form onSubmit={handleFiltroSubmit} className="busca-form" style={{ display: 'flex', gap: '10px' }}>
                     <input
                         type="text"
                         className="busca-input"
                         placeholder="Digite parte do título do livro..."
                         value={filtroTitulo}
-                        onChange={(e) => setFiltroTitulo(e.target.value)} 
+                        onChange={(e) => setFiltroTitulo(e.target.value)}
+                        style={{ flexGrow: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
                     />
-                    <button type="submit" className="busca-button">
+                    <button type="submit" className="busca-button" style={{ padding: '10px 20px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '5px' }}>
                         Filtrar
                     </button>
                     <button type="button" className="limpar-button" onClick={() => {
-                         setFiltroTitulo(''); 
-                         fetchLivros('');     // Busca todos novamente
-                    }}>
+                        setFiltroTitulo('');
+                        fetchLivros('');     // Busca todos novamente
+                    }} style={{ padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '5px' }}>
                         Mostrar Todos
                     </button>
                 </form>
             </div>
-            
-            {/* ========================================================== */}
-            {/* LISTAGEM GERAL (Resultado do Filtro ou Todos) */}
-            {/* ========================================================== */}
-            <p className="page-subtitle">Total de livros em exibição: {livros.length}</p>
 
-            <div className="livros-grid">
-                {livros.length > 0 ? (
-                    livros.map(livro => (
-                        <LivroCard key={livro._id} livro={livro} />
-                    ))
-                ) : (
-                    <p className="no-results">Nenhum livro encontrado com o filtro aplicado.</p>
-                )}
-            </div>
+            {/* ========================================================== */}
+            {/* EXIBIÇÃO DE STATUS / ERRO */}
+            {/* ========================================================== */}
+
+            {isLoading && (
+                <p style={{ textAlign: 'center', fontSize: '1.5rem', color: '#4f46e5' }}>
+                    Carregando Livros... ⏳
+                </p>
+            )}
+
+            {erro && (
+                <div className="alerta-erro" style={{ padding: '15px', border: '1px solid #dc3545', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '5px', marginTop: '20px' }}>
+                    <p>Ocorreu um erro: <strong>{erro}</strong></p>
+                    <p>Verifique o console para mais detalhes ou se o seu backend está rodando em http://localhost:3000.</p>
+                </div>
+            )}
+
+            {/* ========================================================== */}
+            {/* LISTAGEM GERAL */}
+            {/* ========================================================== */}
+
+            {!isLoading && !erro && (
+                <>
+                    <p className="page-subtitle">Total de livros em exibição: {livros.length}</p>
+
+                    <div className="livros-grid">
+                        {livros.length > 0 ? (
+                            livros.map(livro => (
+                                <LivroCard
+                                    key={livro._id}
+                                    livro={livro}
+                                    onDelete={handleDeletarLivro}
+                                    onEdit={handleEditarLivro}
+                                />
+                            ))
+                        ) : (
+                            <p className="no-results" style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888' }}>
+                                Nenhum livro encontrado com o filtro aplicado.
+                            </p>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 };

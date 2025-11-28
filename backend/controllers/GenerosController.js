@@ -63,6 +63,7 @@ const atualizarGenero = async (req, res) => {
     try {
         const { id } = req.params;
 
+        const dados = req.body;
         const generoAtualizado = await GenerosService.atualizarGenero(id, dados);
 
         return res.status(200).json({
