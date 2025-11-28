@@ -21,7 +21,9 @@ const LivrosSchema = new Schema({
     data_publicacao: {
         type: Date
     }
-}, {collection: 'Livros'});
+}, {collection: 'Livros',
+    timestamps: true
+});
 
 const Livros = mongoose.model("Livros", LivrosSchema);
 

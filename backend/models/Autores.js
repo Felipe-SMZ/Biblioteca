@@ -8,7 +8,10 @@ const AutoresSchema = new Schema({
         type: String,
         required: true
     },
-}, { collection: 'Autores' });
+}, {
+    collection: 'Autores',
+    timestamps: true
+});
 
 const Autores = mongoose.model("Autores", AutoresSchema);
 

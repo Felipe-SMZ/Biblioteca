@@ -7,7 +7,10 @@ const GenerosSchema = new Schema({
         type: String,
         required: true
     }
-}, {collection: 'Generos'});
+}, {
+    collection: 'Generos',
+    timestamps: true
+});
 
 const Generos = mongoose.model("Generos", GenerosSchema);
 
