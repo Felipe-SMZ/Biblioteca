@@ -1,16 +1,19 @@
 const mongoose = require('mongoose');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log('MongoDB connected successfully');
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-        process.exit(1);
-    }
-};
+// Conexão com o banco de dados MongoDB usando a variável de ambiente
+mongoose.connect(process.env.MONGODB_URI);
 
-module.exports = connectDB;
+//Obter a conexão
+const db = mongoose.connection;
+
+// Tratar erros de conexão
+db.on('error', console.error.bind(console, 'Erro de conexão com o mongodb!'));
+
+// Verifica se a conexão foi estabelecida 
+db.once('open', function(){
+    console.log('Conexão com mongodb estabelecida!')
+})
+
+module.exports = db;
