@@ -62,7 +62,8 @@ const buscarLivroPorId = async (req, res) => {
 const atualizarLivro = async (req, res) => {
     try {
         const { id } = req.params;
-
+        const dados = req.body
+        
         const livroAtualizado = await LivrosService.atualizarLivro(id, dados);
 
         return res.status(200).json({
