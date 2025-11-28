@@ -1,148 +1,194 @@
-// ... (imports)
 import React, { useState, useEffect } from 'react';
-import { LivrosApi } from '../services/apiService'; // Certifique-se de que o import está correto
+import { useNavigate } from 'react-router-dom';
 
 // ==========================================================
-// 1. Componente de Exibição do Livro (Card) - ADICIONADO BOTÕES
+// CORREÇÃO: Usar named imports do seu arquivo apiService.js
 // ==========================================================
-const LivroCard = ({ livro, onDelete }) => { // Recebe onDelete como prop
-    const dataPub = livro.data_publicacao
-        ? new Date(livro.data_publicacao).toLocaleDateString('pt-BR')
-        : 'Data Desconhecida';
+import { LivrosApi, AutoresApi, GenerosApi } from '../services/apiService';
 
-    if (!livro) return null;
+const CadastroLivro = () => {
+    // 1. ESTADOS DO FORMULÁRIO
+    const [titulo, setTitulo] = useState('');
+    const [autorId, setAutorId] = useState('');
+    const [generoId, setGeneroId] = useState('');
+    const [dataPublicacao, setDataPublicacao] = useState('');
 
-    return (
-        <div className="livro-card">
-            <h2 className="livro-titulo">{livro.titulo}</h2>
+    // 2. ESTADOS AUXILIARES
+    const [autores, setAutores] = useState([]);
+    const [generos, setGeneros] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [feedback, setFeedback] = useState({ mensagem: '', tipo: '' });
 
-            <p className="livro-autor">Autor: {livro.autor_id ? livro.autor_id.nome : 'Desconhecido'}</p>
+    const navigate = useNavigate();
 
-            <div className="livro-info">
-                {/* ... (Gênero e Publicação) ... */}
-            </div>
-            <p className="livro-publicacao">Publicação: {dataPub}</p>
-
-            {/* NOVOS BOTÕES DE AÇÃO */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '15px' }}>
-                {/* O botão Editar pode ser um link para a página de edição de livros */}
-                <button
-                    onClick={() => alert('Implementar navegação para Edição de Livro ID: ' + livro._id)}
-                    style={{ background: '#ffc107', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                    Editar
-                </button>
-                <button
-                    onClick={() => onDelete(livro._id, livro.titulo)} // Chama a função de deleção que está no componente pai
-                    style={{ background: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                    Excluir
-                </button>
-            </div>
-        </div>
-    );
-};
-
-
-// ==========================================================
-// 2. Componente de Listagem Principal - ADICIONADO HANDLE DELETE
-// ==========================================================
-const LivrosListagem = () => {
-    // ... (Estados: livros, filtroTitulo, isLoading, erro)
-    const [livros, setLivros] = useState([]);
-    const [filtroTitulo, setFiltroTitulo] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
-    const [erro, setErro] = useState(null);
-
-    // Função que chama a API
-    const fetchLivros = async (titulo) => {
-        setIsLoading(true);
-        setErro(null);
-
-        try {
-            const dados = await LivrosApi.buscarTodosLivros(titulo);
-            setLivros(dados);
-        } catch (err) {
-            console.error("Erro ao carregar livros:", err);
-            setErro(err.message || 'Falha ao conectar com o servidor.');
-            setLivros([]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // NOVO: Função para deletar um livro
-    const handleDeletarLivro = async (id, tituloLivro) => {
-        if (!window.confirm(`Tem certeza que deseja deletar o livro "${tituloLivro}"?`)) return;
-
-        setIsLoading(true);
-        setErro(null);
-
-        try {
-            await LivrosApi.deletarLivro(id);
-
-            // Remove o livro deletado da lista localmente
-            setLivros(livros.filter(l => l._id !== id));
-        } catch (error) {
-            setErro(`Erro ao deletar livro: ${error.message}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
-    // ... (useEffect e handleFiltroSubmit)
+    // 3. EFEITO: Carrega as listas de Autores e Gêneros ao iniciar
     useEffect(() => {
-        fetchLivros(''); // Carrega todos os livros inicialmente
+        const fetchDadosFormulario = async () => {
+            setIsLoading(true);
+            try {
+                // Busca simultânea das listas
+                const [autoresLista, generosLista] = await Promise.all([
+                    AutoresApi.buscarTodosAutores(),
+                    GenerosApi.buscarTodosGeneros(),
+                ]);
+
+                // As APIs retornam diretamente os dados graças ao handleApiResponse
+                setAutores(autoresLista);
+                setGeneros(generosLista);
+                setFeedback({ mensagem: '', tipo: '' });
+
+            } catch (error) {
+                console.error("Erro ao carregar dados para o formulário:", error);
+                setFeedback({
+                    mensagem: "Erro ao carregar Autores ou Gêneros: " + (error.message || "Verifique o servidor."),
+                    tipo: 'erro'
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDadosFormulario();
     }, []);
 
-    const handleFiltroSubmit = (e) => {
+    // 4. FUNÇÃO: Submissão do Formulário (CREATE)
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        fetchLivros(filtroTitulo);
+
+        // Validação básica
+        if (!titulo.trim() || !autorId || !generoId || !dataPublicacao) {
+            setFeedback({ mensagem: 'Por favor, preencha todos os campos obrigatórios.', tipo: 'erro' });
+            return;
+        }
+
+        const dadosNovoLivro = {
+            titulo: titulo.trim(),
+            autor_id: autorId,
+            genero_id: generoId,
+            data_publicacao: dataPublicacao,
+        };
+
+        setIsLoading(true);
+        setFeedback({ mensagem: 'Cadastrando novo livro...', tipo: 'info' });
+
+        try {
+            // Chama a API para criar o livro
+            const novoLivro = await LivrosApi.criarLivro(dadosNovoLivro);
+
+            setFeedback({
+                mensagem: `Livro "${novoLivro.titulo}" cadastrado com sucesso!`,
+                tipo: 'sucesso'
+            });
+
+            // Redireciona para a lista após o sucesso
+            setTimeout(() => {
+                navigate('/livros');
+            }, 1500);
+
+        } catch (error) {
+            console.error("Erro ao cadastrar livro:", error);
+            setFeedback({ mensagem: error.message || "Falha no cadastro.", tipo: 'erro' });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
+    // Função para renderizar as mensagens de feedback
+    const renderFeedback = () => {
+        if (!feedback.mensagem) return null;
 
+        const style = {
+            padding: '10px',
+            borderRadius: '5px',
+            margin: '15px 0',
+            textAlign: 'center',
+            color: feedback.tipo === 'erro' ? '#991b1b' : (feedback.tipo === 'sucesso' ? '#065f46' : '#1e40af'),
+            backgroundColor: feedback.tipo === 'erro' ? '#fee2e2' : (feedback.tipo === 'sucesso' ? '#d1fae5' : '#bfdbfe'),
+            border: `1px solid ${feedback.tipo === 'erro' ? '#ef4444' : (feedback.tipo === 'sucesso' ? '#34d399' : '#60a5fa')}`,
+        };
+
+        return <div style={style}>{feedback.mensagem}</div>;
+    };
+
+    // 5. RENDERIZAÇÃO
     return (
-        <div className="livros-container">
-            {/* ... (Cabeçalho, Formulário de Busca, Status Loading/Erro) ... */}
+        <div className="page-container">
+            <h2 className="titulo-principal">Cadastrar Novo Livro</h2>
 
-            {/* Exibição de Status (Carregando / Erro) */}
-            {isLoading && (
-                <p style={{ textAlign: 'center', fontSize: '1.5rem', color: '#4f46e5' }}>
-                    Carregando Livros... ⏳
-                </p>
-            )}
+            {renderFeedback()}
 
-            {erro && (
-                <div className="alerta-erro" style={{ padding: '15px', border: '1px solid #dc3545', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '5px', marginTop: '20px' }}>
-                    <p>Ocorreu um erro ao buscar/deletar os livros: <strong>{erro}</strong></p>
-                    <p>Verifique se o seu backend está rodando em http://localhost:3000!</p>
-                </div>
-            )}
+            {isLoading && !feedback.mensagem && <p style={{ textAlign: 'center' }}>Carregando dados...</p>}
 
-            {/* Listagem de Livros */}
-            {!isLoading && !erro && (
-                <>
-                    <p className="page-subtitle">Total de livros em exibição: {livros.length}</p>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '600px', margin: '0 auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
 
-                    <div className="livros-grid">
-                        {livros.length > 0 ? (
-                            livros.map(livro => (
-                                // Passa a função de deleção para o Card
-                                <LivroCard
-                                    key={livro._id}
-                                    livro={livro}
-                                    onDelete={handleDeletarLivro}
-                                />
-                            ))
-                        ) : (
-                            <p className="no-results">Nenhum livro encontrado com o filtro aplicado.</p>
-                        )}
-                    </div>
-                </>
-            )}
+                {/* 1. Título */}
+                <label>Título do Livro *</label>
+                <input
+                    type="text"
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    placeholder="Ex: Dom Casmurro"
+                    style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+                />
+
+                {/* 2. Autor (Dropdown) */}
+                <label>Autor *</label>
+                <select
+                    value={autorId}
+                    onChange={(e) => setAutorId(e.target.value)}
+                    required
+                    disabled={isLoading || autores.length === 0}
+                    style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+                >
+                    <option value="" disabled>Selecione um Autor *</option>
+                    {autores.map(autor => (
+                        <option key={autor._id} value={autor._id}>
+                            {autor.nome}
+                        </option>
+                    ))}
+                </select>
+
+                {/* 3. Gênero (Dropdown) */}
+                <label>Gênero *</label>
+                <select
+                    value={generoId}
+                    onChange={(e) => setGeneroId(e.target.value)}
+                    required
+                    disabled={isLoading || generos.length === 0}
+                    style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+                >
+                    <option value="" disabled>Selecione um Gênero *</option>
+                    {generos.map(genero => (
+                        <option key={genero._id} value={genero._id}>
+                            {genero.genero}
+                        </option>
+                    ))}
+                </select>
+
+                {/* 4. Data de Publicação */}
+                <label>Data de Publicação *</label>
+                <input
+                    type="date"
+                    value={dataPublicacao}
+                    onChange={(e) => setDataPublicacao(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+                />
+
+                {/* Botão de Cadastro */}
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    style={{ padding: '10px 20px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', marginTop: '20px' }}
+                >
+                    {isLoading ? 'Aguarde...' : 'Cadastrar Livro'}
+                </button>
+            </form>
         </div>
     );
 };
 
-export default LivrosListagem;
+export default CadastroLivro;
