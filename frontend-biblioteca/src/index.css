@@ -1,0 +1,94 @@
+/* Definições de cores e layout */
+:root {
+  --cor-principal: #4f46e5;
+  /* Índigo */
+  --cor-secundaria: #6366f1;
+  --cor-fundo: #f3f4f6;
+  --cor-texto: #1f2937;
+  --cor-suave: #4b5563;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--cor-fundo);
+}
+
+/* Estilos da Aplicação */
+.app-container {
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.titulo-principal {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--cor-principal);
+  margin-bottom: 24px;
+  border-bottom: 4px solid var(--cor-secundaria);
+  padding-bottom: 8px;
+}
+
+/* Layout da Grid (Lista de Cards) */
+.livros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+/* Estilo do Card Individual */
+.livro-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+  padding: 24px;
+  border-left: 5px solid var(--cor-principal);
+}
+
+.livro-card:hover {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+}
+
+.livro-titulo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cor-texto);
+  margin-bottom: 8px;
+}
+
+.livro-autor {
+  font-size: 14px;
+  color: var(--cor-principal);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.livro-info {
+  font-size: 14px;
+  color: var(--cor-suave);
+  line-height: 1.5;
+}
+
+.livro-info strong {
+  color: var(--cor-texto);
+  font-weight: 500;
+}
+
+.genero-tag {
+  display: inline-block;
+  background-color: #ede9fe;
+  /* Lilás claro */
+  color: #5b21b6;
+  /* Lilás escuro */
+  padding: 4px 8px;
+  border-radius: 9999px;
+  /* Arredondado total */
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+}
